@@ -93,12 +93,12 @@ clean: CMakeFiles/Peer2PeerFileTransfer.dir/clean
 CMakeFiles/Peer2PeerFileTransfer.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles --progress-num=1,2 "Built target Peer2PeerFileTransfer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles --progress-num=1,2,3 "Built target Peer2PeerFileTransfer"
 .PHONY : CMakeFiles/Peer2PeerFileTransfer.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Peer2PeerFileTransfer.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles 3
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/Peer2PeerFileTransfer.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles 0
 .PHONY : CMakeFiles/Peer2PeerFileTransfer.dir/rule

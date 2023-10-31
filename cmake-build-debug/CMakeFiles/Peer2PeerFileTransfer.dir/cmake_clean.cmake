@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj"
   "CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj"
   "Peer2PeerFileTransfer.exe"
   "Peer2PeerFileTransfer.exe.manifest"

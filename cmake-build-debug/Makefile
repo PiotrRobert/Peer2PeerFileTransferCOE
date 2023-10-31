@@ -142,6 +142,33 @@ Peer2PeerFileTransfer/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/build
 .PHONY : Peer2PeerFileTransfer/fast
 
+client.obj: client.c.obj
+
+.PHONY : client.obj
+
+# target to build an object file
+client.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj
+.PHONY : client.c.obj
+
+client.i: client.c.i
+
+.PHONY : client.i
+
+# target to preprocess a source file
+client.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/client.c.i
+.PHONY : client.c.i
+
+client.s: client.c.s
+
+.PHONY : client.s
+
+# target to generate assembly for a file
+client.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/client.c.s
+.PHONY : client.c.s
+
 main.obj: main.c.obj
 
 .PHONY : main.obj
@@ -178,6 +205,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... Peer2PeerFileTransfer
+	@echo ... client.obj
+	@echo ... client.i
+	@echo ... client.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s

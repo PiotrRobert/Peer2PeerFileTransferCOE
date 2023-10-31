@@ -76,6 +76,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/client.c">
+			<Option target="Peer2PeerFileTransfer"/>
+		</Unit>
 		<Unit filename="C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/main.c">
 			<Option target="Peer2PeerFileTransfer"/>
 		</Unit>

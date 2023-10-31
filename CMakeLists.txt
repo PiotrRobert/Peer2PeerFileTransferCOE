@@ -3,4 +3,4 @@ project(Peer2PeerFileTransfer C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Peer2PeerFileTransfer main.c)
+add_executable(Peer2PeerFileTransfer server.c client.c)

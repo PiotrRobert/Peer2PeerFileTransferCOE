@@ -4,6 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
+  "C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/client.c" "C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/cmake-build-debug/CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj"
   "C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/main.c" "C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/cmake-build-debug/CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
