@@ -1,5 +1,3 @@
-/* time_server.c - main */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -12,19 +10,24 @@
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-/*------------------------------------------------------------------------
- * main - Iterative UDP server for TIME service
- *------------------------------------------------------------------------
- */
-
 struct pdu {
     char type;
     char data[100];
 };
 
-int
-main(int argc, char *argv[])
-{
+struct PDU_R {
+    char peerName[10];
+    char contentName[10];
+    char address[80];
+};
+
+struct contentListStruct {
+    char peerName[10];
+    char contentName[10];
+    char address[80];
+};
+
+int main(int argc, char *argv[]) {
     struct  sockaddr_in fsin;	/* the from address of a client	*/
 
     char    *pts;
@@ -34,7 +37,6 @@ main(int argc, char *argv[])
     struct  sockaddr_in sin; /* an Internet endpoint address         */
     int     s, type;        /* socket descriptor and socket type    */
     int 	port=3000;
-
 
     switch(argc){
         case 1:
@@ -52,86 +54,94 @@ main(int argc, char *argv[])
     sin.sin_addr.s_addr = INADDR_ANY;
     sin.sin_port = htons(port);
 
-    /* Allocate a socket */
     s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s < 0)
         fprintf(stderr, "can't creat socket\n");
 
-    /* Bind the socket */
-    if (bind(s, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-        fprintf(stderr, "can't bind to %d port\n",port);
+    if(bind(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+        fprintf(stderr, "can't bind to %d port\n", port);
+    }
     listen(s, 5);
     alen = sizeof(fsin);
 
-    while (1) {
+    struct PDU_R contentListArray[100];
+    int contentListArrayPos = 0;
 
-        int lstat_returncode;
-        int sendfileloop_counter;
-        int readamnt_file;
+    FILE* contentListFile;
+    contentListFile = fopen("contentList.txt", "a");
+    if(contentListFile == NULL) {
+        printf("\n!Cannot open content list file!\n");
+        exit(0);
+    }
 
-        int has_file = 0;
+    while(1) {
 
-        struct pdu returndata_pdu;
-        struct stat file_stats;
-        FILE* file;
-        struct pdu filename_pdu;
+        struct pdu incomingDataPDU;
+        char incomingData_Buffer[100];
+        int incomingData_Length = 0;
 
-        do{
-            char	buf[100];		/* "input" buffer; any size > 0	*/
-            int readamnt_filename;
-            printf("wait for filename\n");
-            //if (readamnt_filename = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr *)&fsin, &alen) < 0)
-            //	fprintf(stderr, "recvfrom error\n");
-            readamnt_filename = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr *)&fsin, &alen);
-            printf("READ %d bytes from",readamnt_filename);
-            filename_pdu.type = 'C';//buf[0];
-            strncpy(filename_pdu.data, &buf[1], readamnt_filename);
-            filename_pdu.data[readamnt_filename-2]='\0';
-            printf("check pdu data\n");
-            if (filename_pdu.type != 'C'){
-                printf("Buffer 0 is: %c\n",buf[0]);
-                printf("Error, didn't get filename, got %c\n",filename_pdu.type);
-                printf("Error, filename is %s\n",filename_pdu.data);
-                struct pdu filenameerror_pdu;
-                filenameerror_pdu.type = 'E';
-                strncpy(filenameerror_pdu.data, "Server Error", sizeof("Server Error"));
-                (void) sendto(s, &filename_pdu, sizeof(filename_pdu), 0, (struct sockaddr *)&fsin, sizeof(fsin));
-            }else{
-                file = fopen(filename_pdu.data,"rb");
-                // If file doesn't exist, notify client and exit
-                if (file == NULL){
-                    printf("PDU DATA %s DOES NOT EXIST\n",filename_pdu.data);
-                    printf("Buffer DATA %s ???\n",buf);
-                    struct pdu filenameerror_pdu;
-                    filenameerror_pdu.type = 'E';
-                    strncpy(filenameerror_pdu.data, "File doesn't exist", sizeof("File doesn't exist"));
-                    (void) sendto(s, &filenameerror_pdu, sizeof(filenameerror_pdu), 0, (struct sockaddr *)&fsin, sizeof(fsin));
-                }else{
-                    has_file = 1;
-                    printf("WE GOT THE FILE. filename indicator is now %d \n",has_file);
+        incomingData_Length = recvfrom(s, incomingData_Buffer, sizeof(incomingData_Buffer), 0, (struct sockaddr *)&fsin, &alen);
+        incomingDataPDU.type = incomingData_Buffer[0];
+        //memcpy(&incomingDataPDU.data[0], &incomingData_Buffer[1], 100);
+
+        if(incomingDataPDU.type == 'R') { //Content registration
+            struct PDU_R incomingDataPDU_R;
+            memcpy(&incomingDataPDU_R.peerName[0], &incomingData_Buffer[1], 10);
+            memcpy(&incomingDataPDU_R.contentName[0], &incomingData_Buffer[11], 10);
+            memcpy(&incomingDataPDU_R.address[0], &incomingData_Buffer[21], 10);
+            int i = 0;
+            for(i = 0; i < sizeof(contentListArray); i++) {
+                if(strcmp(incomingDataPDU_R.peerName, contentListArray[i].peerName) == 0) {
+                    if(strcmp(incomingDataPDU_R.contentName, contentListArray[i].contentName) == 0) {
+                        struct pdu errorPDU;
+                        errorPDU.type = 'R';
+                        char errorMsg[] = "Content name with that peer name already exists.";
+                        memcpy(&errorPDU.data[0], &errorMsg[0], 50);
+                        (void) sendto(s, &errorPDU, sizeof(errorPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+                        break;
+                    }
                 }
             }
+            if((contentListArrayPos + 1) <= 100) {
+                contentListArray[contentListArrayPos] = incomingDataPDU_R;
+                contentListArrayPos++;
+                struct pdu ackPDU;
+                ackPDU.type = 'A';
+                char errorMsg[] = "Content successfully registered.";
+                memcpy(&ackPDU.data[0], &errorMsg[0], 50);
+                (void) sendto(s, &ackPDU, sizeof(ackPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+            } else {
+                struct pdu errorPDU;
+                errorPDU.type = 'R';
+                char errorMsg[] = "Cannot hold anymore content.";
+                memcpy(&errorPDU.data[0], &errorMsg[0], 50);
+                (void) sendto(s, &errorPDU, sizeof(errorPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+            }
+        } else if(incomingDataPDU.type == 'S') { //Search for content and content server
 
-        }while(has_file == 0);
 
-        lstat_returncode = lstat(filename_pdu.data, &file_stats);
-        file = fopen(filename_pdu.data,"rb");
+        } else if(incomingDataPDU.type == 'T') {//Content deregistration
 
-        for (sendfileloop_counter=0;sendfileloop_counter<(file_stats.st_size)/99;sendfileloop_counter++){
-            returndata_pdu.type = 'D';
-            printf("Sizeof pdu data %d, arraysize pdu data %d \n\n",sizeof(*returndata_pdu.data),ARRAY_SIZE(returndata_pdu.data));
-            readamnt_file = fread(returndata_pdu.data,sizeof(*returndata_pdu.data),ARRAY_SIZE(returndata_pdu.data)-1,	file);
-            returndata_pdu.data[readamnt_file] = '\0';
-            printf("Sizeof pdu data %d, arraysize pdu data %d, readmant %d \n\n",sizeof(*returndata_pdu.data),ARRAY_SIZE(returndata_pdu.data),readamnt_file);
-            printf("sending packet: TYPE %c \n DATA: %s\n",returndata_pdu.type, returndata_pdu.data);
-            (void) sendto(s, &returndata_pdu, readamnt_file+2, 0, (struct sockaddr *)&fsin, sizeof(fsin));
-            memset(returndata_pdu.data, 0, sizeof(returndata_pdu.data));
-            // sleep(1);
+
+        } else if(incomingDataPDU.type == 'O') { //LIST OF content
+
+
+        } else if(incomingDataPDU.type == 'A') { //Acknowledge
+
+
+
+        } else if(incomingDataPDU.type == 'E') { //Error
+
+
+        } else { //Unknown letter
+            printf("\n!Unknown letter received!\n")
         }
-        returndata_pdu.type = 'F';
-        readamnt_file = fread(returndata_pdu.data,sizeof(*returndata_pdu.data),ARRAY_SIZE(returndata_pdu.data)-1,	file);
-        returndata_pdu.data[readamnt_file] = '\0';
-        printf("sending packet: TYPE %c \n DATA: %s",returndata_pdu.type, returndata_pdu.data);
-        (void) sendto(s, &returndata_pdu, readamnt_file+2, 0, (struct sockaddr *)&fsin, sizeof(fsin));
-    }
-}
+
+
+// strncpy(filenameerror_pdu.data, "Server Error", sizeof("Server Error"));
+//                (void) sendto(s, &filename_pdu, sizeof(filename_pdu), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+
+
+
+    } //End of while loop
+} //End of main function
