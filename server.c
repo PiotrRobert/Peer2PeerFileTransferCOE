@@ -82,7 +82,6 @@ int main(int argc, char *argv[]) {
 
         incomingData_Length = recvfrom(s, incomingData_Buffer, sizeof(incomingData_Buffer), 0, (struct sockaddr *)&fsin, &alen);
         incomingDataPDU.type = incomingData_Buffer[0];
-        //memcpy(&incomingDataPDU.data[0], &incomingData_Buffer[1], 100);
 
         if(incomingDataPDU.type == 'R') { //Content registration
             struct PDU_R incomingDataPDU_R;
@@ -120,12 +119,26 @@ int main(int argc, char *argv[]) {
         } else if(incomingDataPDU.type == 'S') { //Search for content and content server
 
 
+
+
         } else if(incomingDataPDU.type == 'T') {//Content deregistration
 
 
+
+
         } else if(incomingDataPDU.type == 'O') { //LIST OF content
-
-
+            int i = 0;
+            for(i = 0; i < contentListArrayPos; i++) {
+                struct pdu listPDU;
+                listPDU.type = 'O';
+                memcpy(&listPDU.data[0], &contentListArray[0], 100);
+                (void) sendto(s, &listPDU, sizeof(listPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+            }
+            struct pdu ackPDU;
+            ackPDU.type = 'A';
+            char errorMsg[] = "Content list successfully sent.";
+            memcpy(&ackPDU.data[0], &errorMsg[0], 50);
+            (void) sendto(s, &ackPDU, sizeof(ackPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
         } else if(incomingDataPDU.type == 'A') { //Acknowledge
 
 
@@ -134,14 +147,9 @@ int main(int argc, char *argv[]) {
 
 
         } else { //Unknown letter
-            printf("\n!Unknown letter received!\n")
+            printf("\n!Unknown letter received!\n");
         }
 
-
-// strncpy(filenameerror_pdu.data, "Server Error", sizeof("Server Error"));
-//                (void) sendto(s, &filename_pdu, sizeof(filename_pdu), 0, (struct sockaddr *)&fsin, sizeof(fsin));
-
-
-
     } //End of while loop
+
 } //End of main function
