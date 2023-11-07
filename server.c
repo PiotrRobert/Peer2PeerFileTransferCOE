@@ -122,10 +122,31 @@ int main(int argc, char *argv[]) {
 
 
         } else if(incomingDataPDU.type == 'T') {//Content deregistration
-
-
-
-
+            struct PDU_R incomingDataPDU_R;
+            memcpy(&incomingDataPDU_R.peerName[0], &incomingData_Buffer[1], 10);
+            memcpy(&incomingDataPDU_R.contentName[0], &incomingData_Buffer[11], 10);
+            memcpy(&incomingDataPDU_R.address[0], &incomingData_Buffer[21], 10);
+            int i = 0;
+            for(i = 0; i < sizeof(contentListArray); i++) {
+                if (strcmp(incomingDataPDU_R.peerName, contentListArray[i].peerName) == 0) {
+                    if (strcmp(incomingDataPDU_R.contentName, contentListArray[i].contentName) == 0) {
+                        struct PDU_R temp = contentListArray[contentListArrayPos-1];
+                        contentListArray[i] = temp;
+                        contentListArrayPos--;
+                        struct pdu ackPDU;
+                        ackPDU.type = 'A';
+                        char errorMsg[] = "Deregistered the content!!!";
+                        memcpy(&ackPDU.data[0], &errorMsg[0], 50);
+                        (void) sendto(s, &ackPDU, sizeof(ackPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+                        break;
+                    }
+                }
+            }
+            struct pdu errorPDU;
+            errorPDU.type = 'R';
+            char errorMsg[] = "Cannot find that specific content.";
+            memcpy(&errorPDU.data[0], &errorMsg[0], 50);
+            (void) sendto(s, &errorPDU, sizeof(errorPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
         } else if(incomingDataPDU.type == 'O') { //LIST OF content
             int i = 0;
             for(i = 0; i < contentListArrayPos; i++) {
