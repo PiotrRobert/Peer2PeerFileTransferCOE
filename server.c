@@ -16,18 +16,20 @@ struct pdu {
 };
 
 struct PDU_R {
-    char peerName[10];
-    char contentName[10];
-    char address[80];
+    char peerName[11];
+    char contentName[11];
+    char address[78];
 };
 
 struct contentListStruct {
-    char peerName[10];
-    char contentName[10];
-    char address[80];
+    char peerName[11];
+    char contentName[11];
+    char address[78];
+    int numberTimesUsed;
 };
 
 int main(int argc, char *argv[]) {
+
     struct  sockaddr_in fsin;	/* the from address of a client	*/
 
     char    *pts;
@@ -64,36 +66,39 @@ int main(int argc, char *argv[]) {
     listen(s, 5);
     alen = sizeof(fsin);
 
-    struct PDU_R contentListArray[100];
+    struct contentListStruct contentListArray[100];
     int contentListArrayPos = 0;
-
-    FILE* contentListFile;
-    contentListFile = fopen("contentList.txt", "a");
-    if(contentListFile == NULL) {
-        printf("\n!Cannot open content list file!\n");
-        exit(0);
-    }
 
     while(1) {
 
         struct pdu incomingDataPDU;
         char incomingData_Buffer[100];
         int incomingData_Length = 0;
+        memset(incomingData_Buffer, 0, sizeof(incomingData_Buffer));
 
-        incomingData_Length = recvfrom(s, incomingData_Buffer, sizeof(incomingData_Buffer), 0, (struct sockaddr *)&fsin, &alen);
+        if(incomingData_Length = recvfrom(s, incomingData_Buffer, sizeof(incomingData_Buffer), 0, (struct sockaddr *)&fsin, &alen) < 0) {
+
+        }
         incomingDataPDU.type = incomingData_Buffer[0];
+
+        printf("\nIP: %s", inet_ntoa(fsin.sin_addr));
 
         if(incomingDataPDU.type == 'R') { //Content registration
             struct PDU_R incomingDataPDU_R;
             memcpy(&incomingDataPDU_R.peerName[0], &incomingData_Buffer[1], 10);
             memcpy(&incomingDataPDU_R.contentName[0], &incomingData_Buffer[11], 10);
-            memcpy(&incomingDataPDU_R.address[0], &incomingData_Buffer[21], 10);
+            strcat(&incomingDataPDU_R.address[0], (char*)inet_ntoa(fsin.sin_addr));
+            strcat(&incomingDataPDU_R.address[0], (char*)":");
+            char* temp[20];
+            memcpy(&temp, &incomingData_Buffer[21], 10);
+            strcat(&incomingDataPDU_R.address[0], (char*)temp);
             int i = 0;
-            for(i = 0; i < sizeof(contentListArray); i++) {
+            //printf("\nPeer name: %s", incomingDataPDU_R.peerName); printf("\nContent name: %s", incomingDataPDU_R.contentName); printf("\nIP address: %s", incomingDataPDU_R.address);
+            for(i = 0; i < contentListArrayPos; i++) {
                 if(strcmp(incomingDataPDU_R.peerName, contentListArray[i].peerName) == 0) {
                     if(strcmp(incomingDataPDU_R.contentName, contentListArray[i].contentName) == 0) {
                         struct pdu errorPDU;
-                        errorPDU.type = 'R';
+                        errorPDU.type = 'E';
                         char errorMsg[] = "Content name with that peer name already exists.";
                         memcpy(&errorPDU.data[0], &errorMsg[0], 50);
                         (void) sendto(s, &errorPDU, sizeof(errorPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
@@ -102,7 +107,12 @@ int main(int argc, char *argv[]) {
                 }
             }
             if((contentListArrayPos + 1) <= 100) {
-                contentListArray[contentListArrayPos] = incomingDataPDU_R;
+                printf("\nAdded");
+                //contentListArray[contentListArrayPos] = incomingDataPDU_R;
+                memcpy(&contentListArray[contentListArrayPos].peerName[0], &incomingDataPDU_R.peerName[0], 11);
+                memcpy(&contentListArray[contentListArrayPos].contentName[0], &incomingDataPDU_R.contentName[0], 11);
+                memcpy(&contentListArray[contentListArrayPos].address[0], &incomingDataPDU_R.address[0], 78);
+                contentListArray[contentListArrayPos].numberTimesUsed = 0;
                 contentListArrayPos++;
                 struct pdu ackPDU;
                 ackPDU.type = 'A';
@@ -110,12 +120,15 @@ int main(int argc, char *argv[]) {
                 memcpy(&ackPDU.data[0], &errorMsg[0], 50);
                 (void) sendto(s, &ackPDU, sizeof(ackPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
             } else {
+                printf("Cannot add");
                 struct pdu errorPDU;
-                errorPDU.type = 'R';
+                errorPDU.type = 'E';
                 char errorMsg[] = "Cannot hold anymore content.";
                 memcpy(&errorPDU.data[0], &errorMsg[0], 50);
                 (void) sendto(s, &errorPDU, sizeof(errorPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
             }
+            printf("\n%d", contentListArrayPos);
+            printf("\nNew below");
         } else if(incomingDataPDU.type == 'S') { //Search for content and content server
 
 
@@ -125,14 +138,21 @@ int main(int argc, char *argv[]) {
             struct PDU_R incomingDataPDU_R;
             memcpy(&incomingDataPDU_R.peerName[0], &incomingData_Buffer[1], 10);
             memcpy(&incomingDataPDU_R.contentName[0], &incomingData_Buffer[11], 10);
-            memcpy(&incomingDataPDU_R.address[0], &incomingData_Buffer[21], 10);
+            strcat(&incomingDataPDU_R.address[0], (char*)inet_ntoa(fsin.sin_addr));
+            strcat(&incomingDataPDU_R.address[0], (char*)":");
+            char* temp[20];
+            memcpy(&temp, &incomingData_Buffer[21], 10);
+            strcat(&incomingDataPDU_R.address[0], (char*)temp);
             int i = 0;
-            for(i = 0; i < sizeof(contentListArray); i++) {
-                if (strcmp(incomingDataPDU_R.peerName, contentListArray[i].peerName) == 0) {
-                    if (strcmp(incomingDataPDU_R.contentName, contentListArray[i].contentName) == 0) {
-                        struct PDU_R temp = contentListArray[contentListArrayPos-1];
+            int temp2 = contentListArrayPos;
+            int contentDeregistered = 0;
+            for(i = 0; i < temp2; i++) {
+                if(strcmp(incomingDataPDU_R.peerName, contentListArray[i].peerName) == 0) {
+                    if(strcmp(incomingDataPDU_R.contentName, contentListArray[i].contentName) == 0) {
+                        struct contentListStruct temp = contentListArray[contentListArrayPos-1];
                         contentListArray[i] = temp;
                         contentListArrayPos--;
+                        contentDeregistered = 1;
                         struct pdu ackPDU;
                         ackPDU.type = 'A';
                         char errorMsg[] = "Deregistered the content!!!";
@@ -142,17 +162,23 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-            struct pdu errorPDU;
-            errorPDU.type = 'R';
-            char errorMsg[] = "Cannot find that specific content.";
-            memcpy(&errorPDU.data[0], &errorMsg[0], 50);
-            (void) sendto(s, &errorPDU, sizeof(errorPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+            if(contentDeregistered == 0) {
+                struct pdu errorPDU;
+                errorPDU.type = 'R';
+                char errorMsg[] = "Cannot find that specific content.";
+                memcpy(&errorPDU.data[0], &errorMsg[0], 50);
+                (void) sendto(s, &errorPDU, sizeof(errorPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
+            }
         } else if(incomingDataPDU.type == 'O') { //LIST OF content
             int i = 0;
             for(i = 0; i < contentListArrayPos; i++) {
                 struct pdu listPDU;
                 listPDU.type = 'O';
-                memcpy(&listPDU.data[0], &contentListArray[0], 100);
+                struct PDU_R temp;
+                memcpy(&temp.peerName[0], &contentListArray[i].peerName[0], 11);
+                memcpy(&temp.contentName[0], &contentListArray[i].contentName[0], 11);
+                memcpy(&temp.address[0], &contentListArray[i].address[0], 78);
+                memcpy(&listPDU.data[0], &temp, 100);
                 (void) sendto(s, &listPDU, sizeof(listPDU), 0, (struct sockaddr *)&fsin, sizeof(fsin));
             }
             struct pdu ackPDU;
@@ -171,6 +197,15 @@ int main(int argc, char *argv[]) {
             printf("\n!Unknown letter received!\n");
         }
 
+
+        sleep(1);
+
+
     } //End of while loop
 
+
+
+
+
 } //End of main function
+

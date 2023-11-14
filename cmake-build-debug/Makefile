@@ -67,10 +67,10 @@ RM = "C:\Program Files\JetBrains\CLion 2020.3.2\bin\cmake\win\bin\cmake.exe" -E 
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\peter\CLionProjects\Peer2PeerFileTransfer
+CMAKE_SOURCE_DIR = C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug
+CMAKE_BINARY_DIR = C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -99,9 +99,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles\progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug\CMakeFiles C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug\CMakeFiles\progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -169,32 +169,32 @@ client.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/client.c.s
 .PHONY : client.c.s
 
-main.obj: main.c.obj
+server.obj: server.c.obj
 
-.PHONY : main.obj
+.PHONY : server.obj
 
 # target to build an object file
-main.c.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj
-.PHONY : main.c.obj
+server.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/server.c.obj
+.PHONY : server.c.obj
 
-main.i: main.c.i
+server.i: server.c.i
 
-.PHONY : main.i
+.PHONY : server.i
 
 # target to preprocess a source file
-main.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/main.c.i
-.PHONY : main.c.i
+server.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/server.c.i
+.PHONY : server.c.i
 
-main.s: main.c.s
+server.s: server.c.s
 
-.PHONY : main.s
+.PHONY : server.s
 
 # target to generate assembly for a file
-main.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/main.c.s
-.PHONY : main.c.s
+server.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Peer2PeerFileTransfer.dir\build.make CMakeFiles/Peer2PeerFileTransfer.dir/server.c.s
+.PHONY : server.c.s
 
 # Help Target
 help:
@@ -208,9 +208,9 @@ help:
 	@echo ... client.obj
 	@echo ... client.i
 	@echo ... client.s
-	@echo ... main.obj
-	@echo ... main.i
-	@echo ... main.s
+	@echo ... server.obj
+	@echo ... server.i
+	@echo ... server.s
 .PHONY : help
 
 

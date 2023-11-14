@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj"
-  "CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj"
+  "CMakeFiles/Peer2PeerFileTransfer.dir/server.c.obj"
   "Peer2PeerFileTransfer.exe"
   "Peer2PeerFileTransfer.exe.manifest"
   "Peer2PeerFileTransfer.pdb"

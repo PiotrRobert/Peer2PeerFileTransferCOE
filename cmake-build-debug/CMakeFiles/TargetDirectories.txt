@@ -1,3 +1,3 @@
-C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/cmake-build-debug/CMakeFiles/Peer2PeerFileTransfer.dir
-C:/Users/peter/CLionProjects/Peer2PeerFileTransfer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+C:/Users/Piotr/CLionProjects/Peer2PeerFileTransferCOE/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Piotr/CLionProjects/Peer2PeerFileTransferCOE/cmake-build-debug/CMakeFiles/Peer2PeerFileTransfer.dir
+C:/Users/Piotr/CLionProjects/Peer2PeerFileTransferCOE/cmake-build-debug/CMakeFiles/rebuild_cache.dir

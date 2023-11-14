@@ -62,10 +62,10 @@ RM = "C:\Program Files\JetBrains\CLion 2020.3.2\bin\cmake\win\bin\cmake.exe" -E 
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\peter\CLionProjects\Peer2PeerFileTransfer
+CMAKE_SOURCE_DIR = C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug
+CMAKE_BINARY_DIR = C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug
 
 # Include any dependencies generated for this target.
 include CMakeFiles/Peer2PeerFileTransfer.dir/depend.make
@@ -76,47 +76,47 @@ include CMakeFiles/Peer2PeerFileTransfer.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/Peer2PeerFileTransfer.dir/flags.make
 
-CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj: CMakeFiles/Peer2PeerFileTransfer.dir/flags.make
-CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj: ../main.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj"
-	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Peer2PeerFileTransfer.dir\main.c.obj   -c C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\main.c
+CMakeFiles/Peer2PeerFileTransfer.dir/server.c.obj: CMakeFiles/Peer2PeerFileTransfer.dir/flags.make
+CMakeFiles/Peer2PeerFileTransfer.dir/server.c.obj: ../server.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/Peer2PeerFileTransfer.dir/server.c.obj"
+	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Peer2PeerFileTransfer.dir\server.c.obj   -c C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\server.c
 
-CMakeFiles/Peer2PeerFileTransfer.dir/main.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/Peer2PeerFileTransfer.dir/main.c.i"
-	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\main.c > CMakeFiles\Peer2PeerFileTransfer.dir\main.c.i
+CMakeFiles/Peer2PeerFileTransfer.dir/server.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/Peer2PeerFileTransfer.dir/server.c.i"
+	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\server.c > CMakeFiles\Peer2PeerFileTransfer.dir\server.c.i
 
-CMakeFiles/Peer2PeerFileTransfer.dir/main.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Peer2PeerFileTransfer.dir/main.c.s"
-	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\main.c -o CMakeFiles\Peer2PeerFileTransfer.dir\main.c.s
+CMakeFiles/Peer2PeerFileTransfer.dir/server.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Peer2PeerFileTransfer.dir/server.c.s"
+	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\server.c -o CMakeFiles\Peer2PeerFileTransfer.dir\server.c.s
 
 CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj: CMakeFiles/Peer2PeerFileTransfer.dir/flags.make
 CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj: ../client.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj"
-	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Peer2PeerFileTransfer.dir\client.c.obj   -c C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\client.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj"
+	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Peer2PeerFileTransfer.dir\client.c.obj   -c C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\client.c
 
 CMakeFiles/Peer2PeerFileTransfer.dir/client.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/Peer2PeerFileTransfer.dir/client.c.i"
-	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\client.c > CMakeFiles\Peer2PeerFileTransfer.dir\client.c.i
+	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\client.c > CMakeFiles\Peer2PeerFileTransfer.dir\client.c.i
 
 CMakeFiles/Peer2PeerFileTransfer.dir/client.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Peer2PeerFileTransfer.dir/client.c.s"
-	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\client.c -o CMakeFiles\Peer2PeerFileTransfer.dir\client.c.s
+	C:\MinGW\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\client.c -o CMakeFiles\Peer2PeerFileTransfer.dir\client.c.s
 
 # Object files for target Peer2PeerFileTransfer
 Peer2PeerFileTransfer_OBJECTS = \
-"CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj" \
+"CMakeFiles/Peer2PeerFileTransfer.dir/server.c.obj" \
 "CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj"
 
 # External object files for target Peer2PeerFileTransfer
 Peer2PeerFileTransfer_EXTERNAL_OBJECTS =
 
-Peer2PeerFileTransfer.exe: CMakeFiles/Peer2PeerFileTransfer.dir/main.c.obj
+Peer2PeerFileTransfer.exe: CMakeFiles/Peer2PeerFileTransfer.dir/server.c.obj
 Peer2PeerFileTransfer.exe: CMakeFiles/Peer2PeerFileTransfer.dir/client.c.obj
 Peer2PeerFileTransfer.exe: CMakeFiles/Peer2PeerFileTransfer.dir/build.make
 Peer2PeerFileTransfer.exe: CMakeFiles/Peer2PeerFileTransfer.dir/linklibs.rsp
 Peer2PeerFileTransfer.exe: CMakeFiles/Peer2PeerFileTransfer.dir/objects1.rsp
 Peer2PeerFileTransfer.exe: CMakeFiles/Peer2PeerFileTransfer.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking C executable Peer2PeerFileTransfer.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking C executable Peer2PeerFileTransfer.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\Peer2PeerFileTransfer.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -129,6 +129,6 @@ CMakeFiles/Peer2PeerFileTransfer.dir/clean:
 .PHONY : CMakeFiles/Peer2PeerFileTransfer.dir/clean
 
 CMakeFiles/Peer2PeerFileTransfer.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" C:\Users\peter\CLionProjects\Peer2PeerFileTransfer C:\Users\peter\CLionProjects\Peer2PeerFileTransfer C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug C:\Users\peter\CLionProjects\Peer2PeerFileTransfer\cmake-build-debug\CMakeFiles\Peer2PeerFileTransfer.dir\DependInfo.cmake --color=$(COLOR)
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug C:\Users\Piotr\CLionProjects\Peer2PeerFileTransferCOE\cmake-build-debug\CMakeFiles\Peer2PeerFileTransfer.dir\DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/Peer2PeerFileTransfer.dir/depend
 
