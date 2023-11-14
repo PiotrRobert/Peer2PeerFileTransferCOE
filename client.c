@@ -12,8 +12,9 @@
 #include <netdb.h>
 
 #define	BUFSIZE 64
-
+#define BUFLEN		256	/* buffer length */
 #define	MSG		"Any Message \n"
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 
 /*------------------------------------------------------------------------
@@ -98,6 +99,17 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Can't connect to %s \n", host);
 		exit(0);
 	}
+    
+    /* ----- Select Setup -----*/
+    fd_set rfds, afds;
+    int socketArray[100];
+    int socketArrayIndex = 0;
+    // socketArray[0] = socket(AF_INET, SOCK_STREAM, 0);
+    FD_ZERO(&afds);
+    // FD_SET(sock, &afds); /* Listening on a TCP socket */
+    FD_SET(0, &afds); /* Listening on stdin */
+    memcpy(&rfds, &afds, sizeof(rfds));
+    // 
 
     /*----- MENU SECTION-----*/
     int run = 1;
@@ -106,198 +118,189 @@ int main(int argc, char **argv) {
     char userChoiceData[2];
     while (run){
         printf("1) Content Registration \n2) Content Download \n3) List of On-Line Registered Content\n 4) Content De-Registration \n0) Exit \nPlease choose an option:\n");
-        userChoiceBytes = read(0, &userChoiceData[0], 2); userChoiceData[1] = '\0'; 
-        switch(userChoiceData[0]){
-            case '0':
-                run = 0;
-                break;
-            case '1':
-                printf("Begin Registration \n");
-                struct pdu contentRegistrationPDU = createPdu('R');
-                char contentName[11];
-                printf("Enter the 10 character content name. larger names will be shortened\n");
-                read(0,&contentName,11);
-                // memcpy(contentName,"a23456.txt",10);
-                contentName[10] = 0;
-                if (fopen(contentName,"rb") == NULL){
-                    printf("file not found\n");
+        
+        select(FD_SETSIZE, &rfds, NULL, NULL, NULL);
+        if (FD_ISSET(0, &rfds)) {
+            userChoiceBytes = read(0, &userChoiceData[0], 2); userChoiceData[1] = '\0'; 
+            switch(userChoiceData[0]){
+                case '0':
+                    run = 0;
                     break;
-                }
+                case '1':
+                    printf("Begin Registration \n");
+                    struct pdu contentRegistrationPDU = createPdu('R');
+                    char contentName[11];
+                    printf("Enter the 10 character content name. larger names will be shortened\n");
+                    read(0,&contentName,11);
+                    // memcpy(contentName,"a23456.txt",10);
+                    contentName[10] = 0;
+                    if (fopen(contentName,"rb") == NULL){
+                        printf("file not found\n");
+                        break;
+                    }
 
-            	int	contentHostSocket;
-                struct sockaddr_in reg_addr;
-                contentHostSocket = socket(AF_INET, SOCK_STREAM, 0);
-                reg_addr.sin_family = AF_INET;
-                reg_addr.sin_port = htons(0);
-                reg_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-                bind(contentHostSocket, (struct sockaddr *)&reg_addr, sizeof(reg_addr));
-                int alen = sizeof (struct sockaddr_in);
-                getsockname(contentHostSocket, (struct sockaddr *) &reg_addr, &alen);
-                
-                int portlen = (int)((ceil(log10(reg_addr.sin_port))+1)*sizeof(char))-1;
-                snprintf(contentRegistrationPDU.data, 100, "%s%s%d", peerName, contentName, reg_addr.sin_port);
-                contentRegistrationPDU.data[10+10+portlen] = 0;
-                printf("sending pdu with type %c and data %s \n",contentRegistrationPDU.type,contentRegistrationPDU.data);
-                write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
-                char tempResponseBuf[100];
-                int responseLen = read(s, &tempResponseBuf[0], 100);
-                struct pdu response = loadPdufromBuf(tempResponseBuf,responseLen);
-                printf("response pdu type %c",response.type);
-                while (response.type == 'E'){
-                    printf("Enter a new peer name \n");
-                    read(0,&peerName,11);
-                    peerName[10] = 0;
-                    memset(contentRegistrationPDU.data,0,100);
+                    int	contentHostSocket;
+                    struct sockaddr_in reg_addr;
+                    contentHostSocket = socket(AF_INET, SOCK_STREAM, 0);
+                    reg_addr.sin_family = AF_INET;
+                    reg_addr.sin_port = htons(0);
+                    reg_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+                    bind(contentHostSocket, (struct sockaddr *)&reg_addr, sizeof(reg_addr));
+                    int alen = sizeof (struct sockaddr_in);
+                    getsockname(contentHostSocket, (struct sockaddr *) &reg_addr, &alen);
+                    
+                    int portlen = (int)((ceil(log10(reg_addr.sin_port))+1)*sizeof(char))-1;
                     snprintf(contentRegistrationPDU.data, 100, "%s%s%d", peerName, contentName, reg_addr.sin_port);
                     contentRegistrationPDU.data[10+10+portlen] = 0;
+                    printf("sending pdu with type %c and data %s \n",contentRegistrationPDU.type,contentRegistrationPDU.data);
                     write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
-                    responseLen = read(s, &tempResponseBuf[0], 100);
-                    response = loadPdufromBuf(tempResponseBuf,responseLen);   
-                }
-                
-                // add error and ack handling, also fork process for handling downloads
-                close(contentHostSocket); //DELETE THIS
-                break;
-            case '2':
-                printf("Begin Content Download \n");
-                printf("Enter the 10 character content name. larger names will be shortened\n");
-                char downloadContentName[11];
-                memcpy(downloadContentName,"1234567890",10);
-                downloadContentName[10] = 0;
-                struct pdu findContentRequest;
-                findContentRequest.type='S';
-                snprintf(findContentRequest.data, 100, "%s%s", peerName, downloadContentName);
-                printf("sending pdu with type %c and data %s \n",findContentRequest.type,findContentRequest.data);
-                write(s, &findContentRequest, 10 + 10 + 2);
-                char findContentResponseBuffer[100];// = "R127.0.0.1:50000";
-                int responseSize = read(s,findContentResponseBuffer,100);
-                struct pdu findContentResponsePDU = loadPdufromBuf(findContentResponseBuffer,responseSize);
-                if (findContentResponsePDU.type == 'R'){
-                    printf("got error:%s", findContentResponsePDU.data);
-                    break;
-                }
-                // Download the file
-                char contentListPeerName[11]; //= //strtok(findContentResponsePDU.data,0);
-                strncpy(contentListPeerName,&findContentResponsePDU.data[0],11);
-                char contentListAddress[100]; //= //strtok(NULL,0);
-                strcpy(contentListAddress,&findContentResponsePDU.data[11]);
-                
-
-                char *host = strtok(contentListAddress,":");
-                printf("got file host ip:%s ", host);
-                char *port = strtok(NULL,":");
-                printf("port:%s\n",port);
-
-                /* Create a stream socket	*/	
-                int 	sd;
-                struct	sockaddr_in server;
-                struct	hostent		*hp;
-                if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-                    fprintf(stderr, "Can't creat a socket\n");
-                    exit(1);
-                }
-                bzero((char *)&server, sizeof(struct sockaddr_in));
-                server.sin_family = AF_INET;
-                server.sin_port = htons(atoi(port));
-                if (hp = gethostbyname(host)) 
-                    bcopy(hp->h_addr, (char *)&server.sin_addr, hp->h_length);
-                else if ( inet_aton(host, (struct in_addr *) &server.sin_addr) ){
-                    fprintf(stderr, "Can't get server's address\n");
-                    break;
-                }
-
-                /* Connecting to the server */
-                if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1){
-                    fprintf(stderr, "Can't connect \n");
-                    break;
-                }
-
-                char fileReadCharacters[16000];
-                char* fileReadPointer = &fileReadCharacters[0];
-	            int msgByteLength = 0;
-                int i;
-                char sbuf[8192];
-                while((i = read(sd, &fileReadCharacters[msgByteLength], 16000)) > 0) {
-                    msgByteLength += i;
-                }
-
-                if(fileReadCharacters[0] == '!') {
-                    printf("There is an error with the file\n");
-                } else if(fileReadCharacters[0] == 'd') {
-                    printf("Downloading file to same directory as this program\n");
-                    char* newPointer = &fileReadCharacters[1];
-                    char txtEnding[] = ".txt";
-                    sbuf[n-1] = 0;
-                    FILE *fptr;
-                    fptr = fopen(sbuf, "wb");
-                    fputs(&fileReadCharacters[2], fptr);
-                    fclose(fptr);
-                } else {
-                    printf("There is an error with the file\n");
-                }
-                close(sd);
-                break;
-            case '3':
-                printf("Begin Content List \n");
-                struct pdu contentListRequestPDU = createPdu('O');
-                write(s, &contentListRequestPDU, 2);
-                char listResponseBuffer[100];
-                int exitContentList = 0;
-                do{
-                    int responseSize = read(s,listResponseBuffer,100);
-                    struct pdu contentListResponsePDU = loadPdufromBuf(listResponseBuffer,responseSize);
-                    printf("response: %s\n",listResponseBuffer);
-                    if (contentListResponsePDU.type == 'A'){
-                        printf("Content list complete\n");
-                        exitContentList = 1;
+                    char tempResponseBuf[100];
+                    int responseLen = read(s, &tempResponseBuf[0], 100);
+                    struct pdu response = loadPdufromBuf(tempResponseBuf,responseLen);
+                    printf("response pdu type %c",response.type);
+                    while (response.type == 'E'){
+                        printf("Enter a new peer name \n");
+                        read(0,&peerName,11);
+                        peerName[10] = 0;
+                        memset(contentRegistrationPDU.data,0,100);
+                        snprintf(contentRegistrationPDU.data, 100, "%s%s%d", peerName, contentName, reg_addr.sin_port);
+                        contentRegistrationPDU.data[10+10+portlen] = 0;
+                        write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
+                        responseLen = read(s, &tempResponseBuf[0], 100);
+                        response = loadPdufromBuf(tempResponseBuf,responseLen);   
                     }
-                    else if (contentListResponsePDU.type == 'E'){
-                        printf("No host with that file \n");
+                    socketArray[socketArrayIndex] = contentHostSocket;
+                    socketArrayIndex++;
+                    // FD_SET(socketArray[socketArrayIndex], &afds);
+                    // add error and ack handling, also fork process for handling downloads
+                    // close(contentHostSocket); //DELETE THIS
+
+                    break;
+                case '2':
+                    printf("Begin Content Download \n");
+                    printf("Enter the 10 character content name. larger names will be shortened\n");
+                    char downloadContentName[11];
+                    memcpy(downloadContentName,"1234567890",10);
+                    downloadContentName[10] = 0;
+                    struct pdu findContentRequest;
+                    findContentRequest.type='S';
+                    snprintf(findContentRequest.data, 100, "%s%s", peerName, downloadContentName);
+                    printf("sending pdu with type %c and data %s \n",findContentRequest.type,findContentRequest.data);
+                    write(s, &findContentRequest, 10 + 10 + 2);
+                    char findContentResponseBuffer[100];// = "R127.0.0.1:50000";
+                    int responseSize = read(s,findContentResponseBuffer,100);
+                    struct pdu findContentResponsePDU = loadPdufromBuf(findContentResponseBuffer,responseSize);
+                    if (findContentResponsePDU.type == 'R'){
+                        printf("got error:%s", findContentResponsePDU.data);
+                        break;
                     }
-                    else if ((contentListResponsePDU.type == 'O') && (responseSize>20)){
-                        char contentListPeerName[11]; //= //strtok(findContentResponsePDU.data,0);
-                        char contentListFileName[11]; //= //strtok(NULL,0);
-                        char contentListAddress[100]; //= //strtok(NULL,0);
-                        strncpy(contentListPeerName,&contentListResponsePDU.data[0],11);
-                        strncpy(contentListFileName,&contentListResponsePDU.data[11],11);
-                        strcpy(contentListAddress,&contentListResponsePDU.data[22]);
-                        printf("address str size %d \n",strlen(&contentListResponsePDU.data[22]));
-                        if(contentListPeerName != NULL){
-                            printf("name %s\n",contentListPeerName);
+                    // Download the file
+                    char contentListPeerName[11]; //= //strtok(findContentResponsePDU.data,0);
+                    strncpy(contentListPeerName,&findContentResponsePDU.data[0],11);
+                    char contentListAddress[100]; //= //strtok(NULL,0);
+                    strcpy(contentListAddress,&findContentResponsePDU.data[11]);
+                    
+
+                    char *host = strtok(contentListAddress,":");
+                    printf("got file host ip:%s ", host);
+                    char *port = strtok(NULL,":");
+                    printf("port:%s\n",port);
+
+                    /* Create a stream socket	*/	
+                    int 	sd;
+                    struct	sockaddr_in server;
+                    struct	hostent		*hp;
+                    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+                        fprintf(stderr, "Can't creat a socket\n");
+                        exit(1);
+                    }
+                    bzero((char *)&server, sizeof(struct sockaddr_in));
+                    server.sin_family = AF_INET;
+                    server.sin_port = htons(atoi(port));
+                    if (hp = gethostbyname(host)) 
+                        bcopy(hp->h_addr, (char *)&server.sin_addr, hp->h_length);
+                    else if ( inet_aton(host, (struct in_addr *) &server.sin_addr) ){
+                        fprintf(stderr, "Can't get server's address\n");
+                        break;
+                    }
+
+                    /* Connecting to the server */
+                    if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1){
+                        fprintf(stderr, "Can't connect \n");
+                        break;
+                    }
+
+                    char fileReadCharacters[16000];
+                    char* fileReadPointer = &fileReadCharacters[0];
+                    int msgByteLength = 0;
+                    int i;
+                    char sbuf[8192];
+                    while((i = read(sd, &fileReadCharacters[msgByteLength], 16000)) > 0) {
+                        msgByteLength += i;
+                    }
+
+                    if(fileReadCharacters[0] == '!') {
+                        printf("There is an error with the file\n");
+                    } else if(fileReadCharacters[0] == 'd') {
+                        printf("Downloading file to same directory as this program\n");
+                        char* newPointer = &fileReadCharacters[1];
+                        char txtEnding[] = ".txt";
+                        sbuf[n-1] = 0;
+                        FILE *fptr;
+                        fptr = fopen(sbuf, "wb");
+                        fputs(&fileReadCharacters[2], fptr);
+                        fclose(fptr);
+                    } else {
+                        printf("There is an error with the file\n");
+                    }
+                    close(sd);
+                    break;
+                case '3':
+                    printf("Begin Content List \n");
+                    struct pdu contentListRequestPDU = createPdu('O');
+                    write(s, &contentListRequestPDU, 2);
+                    char listResponseBuffer[100];
+                    int exitContentList = 0;
+                    do{
+                        int responseSize = read(s,listResponseBuffer,100);
+                        struct pdu contentListResponsePDU = loadPdufromBuf(listResponseBuffer,responseSize);
+                        printf("response: %s\n",listResponseBuffer);
+                        if (contentListResponsePDU.type == 'A'){
+                            printf("Content list complete\n");
+                            exitContentList = 1;
                         }
-                        if(contentListFileName != NULL){
-                            printf("file %s\n",contentListFileName);
-                        }if(contentListAddress != NULL){
-                            printf("addr %s\n",contentListAddress);
-
+                        else if (contentListResponsePDU.type == 'E'){
+                            printf("No host with that file \n");
                         }
-                    }
-                    else{
-                        printf("strange error \n");
-                        exitContentList = 1;
-                    }
-                }while(!exitContentList);
-                break;
-            case '4':
-                // NOT DONE 
-                printf("Begin Deregistration \n");
-                struct pdu contentDeregistrationPDU = createPdu('T');
-                char deregisterContentName[11];
-                printf("Select the content to deregister\n");
-                read(0,&deregisterContentName,11);
-                // memcpy(deregisterContentName,"a23456.txt",10);
-                deregisterContentName[10] = 0;
-                snprintf(contentDeregistrationPDU.data, 100, "%s%s", peerName, deregisterContentName);
-                printf("sending pdu with type %c and data %s \n",contentDeregistrationPDU.type,contentDeregistrationPDU.data);
-                write(s, &contentDeregistrationPDU, 10 + 10 + 2);
-                
-                int deregResponseLen = read(s, &tempResponseBuf[0], 100);
-                struct pdu deregResponse = loadPdufromBuf(tempResponseBuf,deregResponseLen);
-                printf("received: %c %s",deregResponse.type,deregResponse.data);
-                if(deregResponse.type == 'R'){
-                    printf("Enter a new peer name \n");
-                    read(0,&peerName,11);
-                    peerName[10] = 0;
+                        else if ((contentListResponsePDU.type == 'O') && (responseSize>20)){
+                            char contentListPeerName[11]; //= //strtok(findContentResponsePDU.data,0);
+                            char contentListFileName[11]; //= //strtok(NULL,0);
+                            char contentListAddress[100]; //= //strtok(NULL,0);
+                            strncpy(contentListPeerName,&contentListResponsePDU.data[0],11);
+                            strncpy(contentListFileName,&contentListResponsePDU.data[11],11);
+                            strcpy(contentListAddress,&contentListResponsePDU.data[22]);
+                            printf("address str size %d \n",strlen(&contentListResponsePDU.data[22]));
+                            if(contentListPeerName != NULL){
+                                printf("name %s\n",contentListPeerName);
+                            }
+                            if(contentListFileName != NULL){
+                                printf("file %s\n",contentListFileName);
+                            }if(contentListAddress != NULL){
+                                printf("addr %s\n",contentListAddress);
+
+                            }
+                        }
+                        else{
+                            printf("strange error \n");
+                            exitContentList = 1;
+                        }
+                    }while(!exitContentList);
+                    break;
+                case '4':
+                    // NOT DONE 
+                    printf("Begin Deregistration \n");
+                    struct pdu contentDeregistrationPDU = createPdu('T');
+                    char deregisterContentName[11];
                     printf("Select the content to deregister\n");
                     read(0,&deregisterContentName,11);
                     // memcpy(deregisterContentName,"a23456.txt",10);
@@ -309,15 +312,75 @@ int main(int argc, char **argv) {
                     int deregResponseLen = read(s, &tempResponseBuf[0], 100);
                     struct pdu deregResponse = loadPdufromBuf(tempResponseBuf,deregResponseLen);
                     printf("received: %c %s",deregResponse.type,deregResponse.data);
-                }
+                    if(deregResponse.type == 'R'){
+                        printf("Enter a new peer name \n");
+                        read(0,&peerName,11);
+                        peerName[10] = 0;
+                        printf("Select the content to deregister\n");
+                        read(0,&deregisterContentName,11);
+                        // memcpy(deregisterContentName,"a23456.txt",10);
+                        deregisterContentName[10] = 0;
+                        snprintf(contentDeregistrationPDU.data, 100, "%s%s", peerName, deregisterContentName);
+                        printf("sending pdu with type %c and data %s \n",contentDeregistrationPDU.type,contentDeregistrationPDU.data);
+                        write(s, &contentDeregistrationPDU, 10 + 10 + 2);
+                        
+                        int deregResponseLen = read(s, &tempResponseBuf[0], 100);
+                        struct pdu deregResponse = loadPdufromBuf(tempResponseBuf,deregResponseLen);
+                        printf("received: %c %s",deregResponse.type,deregResponse.data);
+                    }
 
-                // close(contentHostSocket); //DELETE THIS
-                break;
-            default:
-                printf("Invalid Choice \n\n");
-                sleep(1);
+                    // close(contentHostSocket); //DELETE THIS
+                    break;
+                default:
+                    printf("Invalid Choice \n\n");
+                    sleep(1);
+            }
         }
-        
+        else{
+            int tcpSocketLoop = 0;
+            for(tcpSocketLoop=0; tcpSocketLoop<socketArrayIndex; tcpSocketLoop++){
+                if(FD_ISSET(socketArray[socketArrayIndex], &rfds)){
+                    int sd = socketArray[socketArrayIndex];
+                    int readamnt;
+                    char	*bp, buf[BUFLEN];
+                	unsigned char  buffer[100];
+
+                    // Read Filename from client
+                    int bytes_to_read = 0;
+                    n = read(sd, buf, BUFLEN);
+                    bytes_to_read += n;
+                    printf("read %d bytes", bytes_to_read);
+                    printf("filename is %s",buf);
+                    buf[bytes_to_read-1]=0;//Replace TCP terminating char with string terminating char
+
+                    // Read File, and write to client
+                    FILE* file;
+                    file = fopen(buf,"rb");
+
+                    // If file doesn't exist, notify client and exit
+                    if (file == NULL){
+                        printf("FILE %s DOES NOT EXIST",buf);
+                        write(sd, "!FILE DOES NOT EXIST", sizeof("!FILE DOES NOT EXIST"));
+                        close(sd);
+                        return(0);
+                    }
+
+                    // If file found, write contents to client then exit
+                    write(sd, "d", sizeof("d"));
+                    while(readamnt = fread(buffer,sizeof(*buffer),ARRAY_SIZE(buffer),	file))
+                    {
+                        write(sd, buffer, readamnt);
+                        printf("\nsent to client %d bytes: %s \n\n",readamnt, buffer);
+                        memset(buffer, 0, sizeof(buffer));
+                        sleep(1);
+
+                    }
+                    fclose(file);
+                    close(sd);
+                    printf("closed file and socket");
+                }
+            }
+        }
     }
 
 	exit(0);
