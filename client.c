@@ -231,8 +231,11 @@ int main(int argc, char **argv) {
                         printf("Enter a new peer name \n");
                         read(0,&peerName,11);
                         peerName[10] = 0;
+						peerName[strcspn(peerName,"\r\n")] = 0;
                         memset(contentRegistrationPDU.data,0,100);
-                        snprintf(contentRegistrationPDU.data, 100, "%s%s%d", peerName, contentName, reg_addr.sin_port);
+                        memcpy(&contentRegistrationPDU.data[0],peerName,10);
+                    	memcpy(&contentRegistrationPDU.data[10],contentName,10);
+                    	memcpy(&contentRegistrationPDU.data[20],portStr,11);
                         contentRegistrationPDU.data[10+10+portlen] = 0;
                         write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
                         responseLen = read(s, &tempResponseBuf[0], 100);
@@ -383,11 +386,8 @@ int main(int argc, char **argv) {
 					deregisterContentName[strcspn(deregisterContentName,"\r\n")] = 0;
                     memcpy(&contentDeregistrationPDU.data[0],peerName,10);
                     memcpy(&contentDeregistrationPDU.data[10],deregisterContentName,10);
-                    // memcpy(&contentDeregistrationPDU.data[20],portStr,11);
                     contentDeregistrationPDU.data[10+10] = 0;
-                    // for (int idx=0;idx<30;idx++) printf("name char %d %c %d\n",idx,contentDeregistrationPDU.data[idx],contentDeregistrationPDU.data[idx]);
                     printf("memcpy data: %s\n",contentDeregistrationPDU.data);
-                    // snprintf(contentDeregistrationPDU.data, 100, "%s%s", peerName, deregisterContentName);
                     printf("sending pdu with type %c and data %s \n",contentDeregistrationPDU.type,contentDeregistrationPDU.data);
                     write(s, &contentDeregistrationPDU, 10 + 10 + 2);
                     
@@ -398,10 +398,14 @@ int main(int argc, char **argv) {
                         printf("Enter a new peer name \n");
                         read(0,&peerName,11);
                         peerName[10] = 0;
+						peerName[strcspn(peerName,"\r\n")] = 0;
                         printf("Select the content to deregister\n");
                         read(0,&deregisterContentName,11);
                         deregisterContentName[10] = 0;
-                        snprintf(contentDeregistrationPDU.data, 100, "%s%s", peerName, deregisterContentName);
+						deregisterContentName[strcspn(deregisterContentName,"\r\n")] = 0;
+                        memcpy(&contentDeregistrationPDU.data[0],peerName,10);
+                    	memcpy(&contentDeregistrationPDU.data[10],deregisterContentName,10);
+                    
                         printf("sending pdu with type %c and data %s \n",contentDeregistrationPDU.type,contentDeregistrationPDU.data);
                         write(s, &contentDeregistrationPDU, 10 + 10 + 2);
                         
