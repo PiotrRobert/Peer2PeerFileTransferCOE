@@ -90,27 +90,95 @@ int echod(int sd)
 	return(0);
 }
 
+char peerName[11]={0};
+char	*host = "localhost";
+int	port = 3000;
+struct hostent	*phe;	/* pointer to host information entry	*/
+struct sockaddr_in sockIn;	/* an Internet endpoint address		*/
+int	s, n, type;	/* socket descriptor and socket type	*/
+// Storing files currently hosted
+int socketArray[100];
+char filenames[100][11];
+char peernames[100][11];
+int socketArrayIndex = 0;
+int zeroNames = 0;
+int run = 1;
+char fileName[100];
+int userChoiceBytes = 0;
+char userChoiceData[2];
+fd_set rfds, afds;
+
+int registerContent(char *contentName){
+	printf("Begin Registration \n");
+	struct pdu contentRegistrationPDU = createPdu('R');
+	memcpy(filenames[socketArrayIndex], contentName,11);
+	// TCP Port Setup
+	int	contentHostSocket;
+	struct sockaddr_in reg_addr;
+	contentHostSocket = socket(AF_INET, SOCK_STREAM, 0);
+	reg_addr.sin_family = AF_INET;
+	reg_addr.sin_port = htons(0);
+	reg_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	bind(contentHostSocket, (struct sockaddr *)&reg_addr, sizeof(reg_addr));
+	int alen = sizeof (struct sockaddr_in);
+	getsockname(contentHostSocket, (struct sockaddr *) &reg_addr, &alen);
+	listen(contentHostSocket, 5);
+
+	// Server Response section
+	int portlen = (int)((ceil(log10(reg_addr.sin_port))+1)*sizeof(char))-1;
+	printf("host on port %d\n",ntohs(reg_addr.sin_port));
+	char portStr[11] = {0};
+	snprintf(portStr, portlen+1, "%d", ntohs(reg_addr.sin_port));
+	printf("port string is: %s\n",portStr);
+	memcpy(&contentRegistrationPDU.data[0],peerName,10);
+	memcpy(&contentRegistrationPDU.data[10],contentName,10);
+	memcpy(&contentRegistrationPDU.data[20],portStr,11);
+	contentRegistrationPDU.data[10+10+portlen] = 0;
+	printf("memcpy data: %s\n",contentRegistrationPDU.data);
+
+	printf("sending pdu with type %c and data %s%s%s \n",contentRegistrationPDU.type,&contentRegistrationPDU.data[0],&contentRegistrationPDU.data[11],&contentRegistrationPDU.data[21]);
+	write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
+	char tempResponseBuf[100];
+	int responseLen = read(s, &tempResponseBuf[0], 100);
+	if (responseLen == -1) {
+		printf("Error reading response, exiting to menu\n");	
+		return -1;				
+	}
+	struct pdu response = loadPdufromBuf(tempResponseBuf,responseLen);
+	printf("response pdu type %c",response.type);
+	while (response.type == 'E'){
+		printf("Enter a new peer name \n");
+
+		read(0,&peerName,11);
+		peerName[10] = 0;
+		peerName[strcspn(peerName,"\r\n")] = 0;
+		memset(contentRegistrationPDU.data,0,100);
+		memcpy(&contentRegistrationPDU.data[0],peerName,10);
+		memcpy(&contentRegistrationPDU.data[10],contentName,10);
+		memcpy(&contentRegistrationPDU.data[20],portStr,11);
+		contentRegistrationPDU.data[10+10+portlen] = 0;
+		write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
+		responseLen = read(s, &tempResponseBuf[0], 100);
+		response = loadPdufromBuf(tempResponseBuf,responseLen);   
+	}
+	printf("\ncontent host socket %d\n",contentHostSocket);                    
+	socketArray[socketArrayIndex] = contentHostSocket;
+	memcpy(peernames[socketArrayIndex], peerName,11);
+	FD_ZERO(&afds);
+	FD_SET(socketArray[socketArrayIndex], &afds);
+	FD_SET(0, &afds); /* Listening on stdin */
+	memcpy(&rfds, &afds, sizeof(rfds));
+	socketArrayIndex++;
+}
 
 int main(int argc, char **argv) {
 
-    char peerName[11]={0};
     printf("Enter a 10 character peer name. larger names will be shortened\n");
     int nameSize = read(0,&peerName,11);
-    // int nameSize = 11;
-    // memcpy(peerName,"qwertyuiop",10);
     printf("name size %d\n",nameSize);
     peerName[nameSize-1] = 0;
-    // for (int idx=0; idx<11; idx++){
-    //     printf("name char %d %c %d\n",idx,peerName[idx],peerName[idx]);
-    // }
 
     /* UDP SETUP SECTION */
-	char	*host = "localhost";
-	int	port = 3000;
-	struct hostent	*phe;	/* pointer to host information entry	*/
-	struct sockaddr_in sin;	/* an Internet endpoint address		*/
-	int	s, n, type;	/* socket descriptor and socket type	*/
-
 	switch (argc) {
 	case 1:
         fprintf(stderr, "usage: UDPtime [host [port]]\n");
@@ -128,15 +196,15 @@ int main(int argc, char **argv) {
 	}
 	
 
-	memset(&sin, 0, sizeof(sin));
-        sin.sin_family = AF_INET;                                                                
-        sin.sin_port = htons(port);
+	memset(&sockIn, 0, sizeof(sockIn));
+        sockIn.sin_family = AF_INET;                                                                
+        sockIn.sin_port = htons(port);
                                                                                         
     /* Map host name to IP address, allowing for dotted decimal */
         if ( phe = gethostbyname(host) ){
-                memcpy(&sin.sin_addr, phe->h_addr, phe->h_length);
+                memcpy(&sockIn.sin_addr, phe->h_addr, phe->h_length);
         }
-        else if ( (sin.sin_addr.s_addr = inet_addr(host)) == INADDR_NONE )
+        else if ( (sockIn.sin_addr.s_addr = inet_addr(host)) == INADDR_NONE )
 		fprintf(stderr, "Can't get host entry \n");
                                                                                 
     /* Allocate a socket */
@@ -146,30 +214,19 @@ int main(int argc, char **argv) {
 	
                                                                                 
     /* Connect the socket */
-        if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+        if (connect(s, (struct sockaddr *)&sockIn, sizeof(sockIn)) < 0) {
 		fprintf(stderr, "Can't connect to %s \n", host);
 		exit(0);
 	}
     
-    // Storing files currently hosted
-    int socketArray[100];
-    char filenames[100][11];
-    char peernames[100][11];
-    int socketArrayIndex = 0;
-    int zeroNames = 0;
     for (zeroNames = 0; zeroNames<100;zeroNames++){filenames[zeroNames][0]=0;}
 
-    /* ----- Select Setup -----*/
-    fd_set rfds, afds;    
+    /* ----- Select Setup -----*/    
     FD_ZERO(&afds);
     FD_SET(0, &afds); /* Listening on stdin */
     memcpy(&rfds, &afds, sizeof(rfds));
 
     /*----- MENU SECTION-----*/
-    int run = 1;
-    char fileName[100];
-    int userChoiceBytes = 0;
-    char userChoiceData[2];
     while (run){
         printf("1) Content Registration \n2) Content Download \n3) List of On-Line Registered Content\n 4) Content De-Registration \n0) Exit \nPlease choose an option:\n");
         
@@ -330,8 +387,8 @@ int main(int argc, char **argv) {
                         printf("There is an error with the file\n");
                     }
                     close(sd);
-
-
+			
+					registerContent(downloadContentName);		
 
                     break;
                 case '3':
