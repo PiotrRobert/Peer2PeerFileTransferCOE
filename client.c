@@ -100,9 +100,9 @@ int main(int argc, char **argv) {
     // memcpy(peerName,"qwertyuiop",10);
     printf("name size %d\n",nameSize);
     peerName[nameSize-1] = 0;
-    for (int idx=0; idx<11; idx++){
-        printf("name char %d %c %d\n",idx,peerName[idx],peerName[idx]);
-    }
+    // for (int idx=0; idx<11; idx++){
+    //     printf("name char %d %c %d\n",idx,peerName[idx],peerName[idx]);
+    // }
 
     /* UDP SETUP SECTION */
 	char	*host = "localhost";
@@ -156,7 +156,8 @@ int main(int argc, char **argv) {
     char filenames[100][11];
     char peernames[100][11];
     int socketArrayIndex = 0;
-    for (int name = 0; name<100;name++){filenames[name][0]=0;}
+    int zeroNames = 0;
+    for (zeroNames = 0; zeroNames<100;zeroNames++){filenames[zeroNames][0]=0;}
 
     /* ----- Select Setup -----*/
     fd_set rfds, afds;    
@@ -186,6 +187,7 @@ int main(int argc, char **argv) {
                     printf("Enter the 10 character content name. larger names will be shortened\n");
                     read(0,&contentName,11);
                     contentName[10] = 0;
+					contentName[strcspn(contentName,"\r\n")] = 0;
                     if (fopen(contentName,"rb") == NULL){
                         printf("file not found\n");
                         break;
@@ -208,22 +210,21 @@ int main(int argc, char **argv) {
                     printf("host on port %d\n",ntohs(reg_addr.sin_port));
                     char portStr[11] = {0};
                     snprintf(portStr, portlen+1, "%d", ntohs(reg_addr.sin_port));
-                    printf("port is: %s\n",portStr);
+                    printf("port string is: %s\n",portStr);
                     memcpy(&contentRegistrationPDU.data[0],peerName,10);
                     memcpy(&contentRegistrationPDU.data[10],contentName,10);
                     memcpy(&contentRegistrationPDU.data[20],portStr,11);
                     contentRegistrationPDU.data[10+10+portlen] = 0;
                     printf("memcpy data: %s\n",contentRegistrationPDU.data);
-                    for (int idx=0; idx<30; idx++){
-                        printf("name char %d %c %d\n",idx,contentRegistrationPDU.data[idx],contentRegistrationPDU.data[idx]);
-                    }
-                    // snprintf(contentRegistrationPDU.data, 100, "%s%s%d", peerName, contentName, ntohs(reg_addr.sin_port));
-                    // printf("snprintf data: %s\n",contentRegistrationPDU.data);
                     
                     printf("sending pdu with type %c and data %s%s%s \n",contentRegistrationPDU.type,&contentRegistrationPDU.data[0],&contentRegistrationPDU.data[11],&contentRegistrationPDU.data[21]);
                     write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
                     char tempResponseBuf[100];
                     int responseLen = read(s, &tempResponseBuf[0], 100);
+					if (responseLen == -1) {
+						printf("Error reading response, exiting to menu\n");	
+						break;				
+					}
                     struct pdu response = loadPdufromBuf(tempResponseBuf,responseLen);
                     printf("response pdu type %c",response.type);
                     while (response.type == 'E'){
@@ -250,9 +251,10 @@ int main(int argc, char **argv) {
                 case '2':
                     printf("Begin Content Download \n");
                     printf("Enter the 10 character content name. larger names will be shortened\n");
-                    char downloadContentName[11];
+                    char downloadContentName[11]={0};
                     read(0,&downloadContentName,11);
                     downloadContentName[10] = 0;
+					downloadContentName[strcspn(downloadContentName,"\r\n")] = 0;
                     struct pdu findContentRequest;
                     findContentRequest.type='S';
                     memcpy(&findContentRequest.data[0],peerName,10);
@@ -317,14 +319,17 @@ int main(int argc, char **argv) {
                         printf("Downloading file to same directory as this program\n");
                         char* newPointer = &fileReadCharacters[1];
                         FILE *fptr;
-                        // fptr = fopen(downloadContentName, "wb");
-                        fptr = fopen("testaaaa.txt", "wb");
+                        fptr = fopen(downloadContentName, "wb");
+                        // fptr = fopen("testaaaa.txt", "wb");
                         fputs(&fileReadCharacters[2], fptr);
                         fclose(fptr);
                     } else {
                         printf("There is an error with the file\n");
                     }
                     close(sd);
+
+
+
                     break;
                 case '3':
                     printf("Begin Content List \n");
@@ -375,11 +380,12 @@ int main(int argc, char **argv) {
                     printf("Select the content to deregister\n");
                     read(0,&deregisterContentName,11);
                     deregisterContentName[10] = 0;
+					deregisterContentName[strcspn(deregisterContentName,"\r\n")] = 0;
                     memcpy(&contentDeregistrationPDU.data[0],peerName,10);
                     memcpy(&contentDeregistrationPDU.data[10],deregisterContentName,10);
                     // memcpy(&contentDeregistrationPDU.data[20],portStr,11);
                     contentDeregistrationPDU.data[10+10] = 0;
-                    for (int idx=0;idx<30;idx++) printf("name char %d %c %d\n",idx,contentDeregistrationPDU.data[idx],contentDeregistrationPDU.data[idx]);
+                    // for (int idx=0;idx<30;idx++) printf("name char %d %c %d\n",idx,contentDeregistrationPDU.data[idx],contentDeregistrationPDU.data[idx]);
                     printf("memcpy data: %s\n",contentDeregistrationPDU.data);
                     // snprintf(contentDeregistrationPDU.data, 100, "%s%s", peerName, deregisterContentName);
                     printf("sending pdu with type %c and data %s \n",contentDeregistrationPDU.type,contentDeregistrationPDU.data);
@@ -408,10 +414,13 @@ int main(int argc, char **argv) {
                     break;
                 case '0':
                     printf("deregister all files before exiting\n");
-                    for (int idx = 0; idx < socketArrayIndex; idx++){
+                    int deregIdx = 0;
+                    for (deregIdx = 0; deregIdx < socketArrayIndex; deregIdx++){
                         struct pdu contentDeregistrationPDU = createPdu('T');
-                        printf("deregister file %s\n",filenames[idx]);
-                        snprintf(contentDeregistrationPDU.data, 100, "%s%s", peernames[idx], filenames[idx]);
+                        printf("deregister file %s\n",filenames[deregIdx]);
+	                    memcpy(&contentDeregistrationPDU.data[0],peernames[deregIdx],10);
+    	                memcpy(&contentDeregistrationPDU.data[10],filenames[deregIdx],10);                        
+						// snprintf(contentDeregistrationPDU.data, 100, "%s%s", peernames[deregIdx], filenames[deregIdx]);
                         printf("sending pdu with type %c and data %s \n",contentDeregistrationPDU.type,contentDeregistrationPDU.data);
                         write(s, &contentDeregistrationPDU, 10 + 10 + 2);                    
                         int deregResponseLen = read(s, &tempResponseBuf[0], 100);
@@ -442,7 +451,7 @@ int main(int argc, char **argv) {
                 	unsigned char  buffer[100];
 
                     FILE* file;
-                    file = fopen("1234567890","rb");
+                    file = fopen(filenames[tcpSocketLoop],"rb");
 
                     // If file doesn't exist, notify client and exit
                     if (file == NULL){
