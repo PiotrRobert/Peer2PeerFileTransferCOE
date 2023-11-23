@@ -44,52 +44,6 @@ struct pdu createPdu(char pduType){
     return returnPdu;
 }
 
-int echod(int sd)
-{
-
-	char	*bp, buf[BUFLEN];
-	int 	n, bytes_to_read;
-	int readamnt = 0;	
-	unsigned char  buffer[100];
-
-	// Read Filename from client
-	bytes_to_read = 0;
-	n = read(sd, buf, BUFLEN);
-	bytes_to_read += n;
-	printf("read %d bytes", bytes_to_read);
-	printf("filename is %s",buf);
-	buf[bytes_to_read-1]=0;//Replace TCP terminating char with string terminating char
-
-	// Read File, and write to client
-	FILE* file;
-	file = fopen(buf,"rb");
-
-	// If file doesn't exist, notify client and exit
-	if (file == NULL){
-		printf("FILE %s DOES NOT EXIST",buf);
-		write(sd, "!FILE DOES NOT EXIST", sizeof("!FILE DOES NOT EXIST"));
-		close(sd);
-		return(0);
-	}
-
-	// If file found, write contents to client then exit
-	write(sd, "d", sizeof("d"));
-	while(readamnt = fread(buffer,sizeof(*buffer),ARRAY_SIZE(buffer),	file))
-	{
-		write(sd, buffer, readamnt);
-		printf("\nsent to client %d bytes: %s \n\n",readamnt, buffer);
-		memset(buffer, 0, sizeof(buffer));
-		sleep(1);
-
-	}
-	fclose(file);
-	close(sd);
-	printf("closed file and socket");
-
-	
-	return(0);
-}
-
 char peerName[11]={0};
 char	*host = "localhost";
 int	port = 3000;
@@ -238,8 +192,8 @@ int main(int argc, char **argv) {
             printf("user input: %c\n",userChoiceData[0]);
             switch(userChoiceData[0]){
                 case '1':
+                    // Step 1) Ask user for filename, and check if it exists
                     printf("Begin Registration \n");
-                    struct pdu contentRegistrationPDU = createPdu('R');
                     char contentName[11] = {0};
                     printf("Enter the 10 character content name. larger names will be shortened\n");
                     read(0,&contentName,11);
@@ -249,8 +203,9 @@ int main(int argc, char **argv) {
                         printf("file not found\n");
                         break;
                     }
-                    memcpy(filenames[socketArrayIndex], contentName,11);
-                    // TCP Port Setup
+                    memcpy(filenames[socketArrayIndex], contentName,11); //Add to list of all content
+
+                    // Step 2) Setup Content Server Socket
                     int	contentHostSocket;
                     struct sockaddr_in reg_addr;
                     contentHostSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -262,7 +217,8 @@ int main(int argc, char **argv) {
                     getsockname(contentHostSocket, (struct sockaddr *) &reg_addr, &alen);
                     listen(contentHostSocket, 5);
 
-                    // Server Response section
+                    // Step 3) Send the request to the server
+                    struct pdu contentRegistrationPDU = createPdu('R');
                     int portlen = (int)((ceil(log10(reg_addr.sin_port))+1)*sizeof(char))-1;
                     printf("host on port %d\n",ntohs(reg_addr.sin_port));
                     char portStr[11] = {0};
@@ -272,10 +228,10 @@ int main(int argc, char **argv) {
                     memcpy(&contentRegistrationPDU.data[10],contentName,10);
                     memcpy(&contentRegistrationPDU.data[20],portStr,11);
                     contentRegistrationPDU.data[10+10+portlen] = 0;
-                    printf("memcpy data: %s\n",contentRegistrationPDU.data);
-                    
-                    printf("sending pdu with type %c and data %s%s%s \n",contentRegistrationPDU.type,&contentRegistrationPDU.data[0],&contentRegistrationPDU.data[11],&contentRegistrationPDU.data[21]);
+                    printf("sending pdu with type %c and data %s%s%s \n",contentRegistrationPDU.type,&contentRegistrationPDU.data[0],&contentRegistrationPDU.data[10],&contentRegistrationPDU.data[20]);
                     write(s, &contentRegistrationPDU, 10 + 10 + portlen+2);
+                    
+                    // Step 4) Handle server's response
                     char tempResponseBuf[100];
                     int responseLen = read(s, &tempResponseBuf[0], 100);
 					if (responseLen == -1) {
@@ -298,6 +254,8 @@ int main(int argc, char **argv) {
                         responseLen = read(s, &tempResponseBuf[0], 100);
                         response = loadPdufromBuf(tempResponseBuf,responseLen);   
                     }
+
+                    // Step 5) Finalize Content Server
                     printf("\ncontent host socket %d\n",contentHostSocket);                    
                     socketArray[socketArrayIndex] = contentHostSocket;
                     memcpy(peernames[socketArrayIndex], peerName,11);
@@ -310,16 +268,18 @@ int main(int argc, char **argv) {
                     break;
                 case '2':
                     printf("Begin Content Download \n");
+                    // Step 1) Get content name from user
                     printf("Enter the 10 character content name. larger names will be shortened\n");
                     char downloadContentName[11]={0};
                     read(0,&downloadContentName,11);
                     downloadContentName[10] = 0;
 					downloadContentName[strcspn(downloadContentName,"\r\n")] = 0;
+                    
+                    // Step 2) Send request to server and handle response
                     struct pdu findContentRequest;
                     findContentRequest.type='S';
                     memcpy(&findContentRequest.data[0],peerName,10);
                     memcpy(&findContentRequest.data[10],downloadContentName,10);
-                    // snprintf(findContentRequest.data, 100, "%s%s", peerName, downloadContentName);
                     printf("sending pdu with type %c and data %s \n",findContentRequest.type,findContentRequest.data);
                     write(s, &findContentRequest, 10 + 10 + 2);
                     char findContentResponseBuffer[100];// = "R127.0.0.1:50000";
@@ -329,19 +289,18 @@ int main(int argc, char **argv) {
                         printf("got error:%s", findContentResponsePDU.data);
                         break;
                     }
-                    // Download the file
+
+                    // Step 4) Download the file
                     char contentListPeerName[11]; //= //strtok(findContentResponsePDU.data,0);
                     strncpy(contentListPeerName,&findContentResponsePDU.data[0],11);
                     char contentListAddress[100]; //= //strtok(NULL,0);
                     strcpy(contentListAddress,&findContentResponsePDU.data[11]);
-                    
-
+                    // Step 4.1) Extract IP and PORT
                     char *host = strtok(contentListAddress,":");
-                    printf("got file host ip:%s ", host);
                     char *port = strtok(NULL,":");
-                    printf("port:%s\n",port);
+                    printf("host ip:%s port:%s\n",host,port);
 
-                    /* Create a stream socket	*/	
+                    // Step 4.2) Create a TCP socket	
                     int 	sd;
                     struct	sockaddr_in server;
                     struct	hostent		*hp;
@@ -358,13 +317,18 @@ int main(int argc, char **argv) {
                         fprintf(stderr, "Can't get server's address\n");
                         break;
                     }
-
-                    /* Connecting to the server */
+                    // Step 4.3) Connecting to the server
                     if (connect(sd, (struct sockaddr *)&server, sizeof(server)) == -1){
                         fprintf(stderr, "Can't connect \n");
                         break;
                     }
-
+                    // Step 4.4) Send D type PDU
+                    struct pdu requestDownloadPDU = createPdu('D');
+                    memcpy(&requestDownloadPDU.data[0],peerName,10);
+                    memcpy(&requestDownloadPDU.data[10],downloadContentName,10);
+                    requestDownloadPDU.data[21]=0;
+                    write(sd, &requestDownloadPDU, 10 + 10 + 1);
+                    // Step 4.5) Download File
                     char fileReadCharacters[16000];
                     char* fileReadPointer = &fileReadCharacters[0];
                     int msgByteLength = 0;
@@ -372,19 +336,15 @@ int main(int argc, char **argv) {
                     while((i = read(sd, &fileReadCharacters[msgByteLength], 16000)) > 0) {
                         msgByteLength += i;
                     }
-
-                    if(fileReadCharacters[0] == '!') {
+                    if(fileReadCharacters[0] != 'C') {
                         printf("There is an error with the file\n");
-                    } else if(fileReadCharacters[0] == 'd') {
+                    } else{
                         printf("Downloading file to same directory as this program\n");
                         char* newPointer = &fileReadCharacters[1];
                         FILE *fptr;
                         fptr = fopen(downloadContentName, "wb");
-                        // fptr = fopen("testaaaa.txt", "wb");
                         fputs(&fileReadCharacters[2], fptr);
                         fclose(fptr);
-                    } else {
-                        printf("There is an error with the file\n");
                     }
                     close(sd);
 			
@@ -500,7 +460,6 @@ int main(int argc, char **argv) {
             int tcpSocketLoop = 0;
             for(tcpSocketLoop=0; tcpSocketLoop<socketArrayIndex; tcpSocketLoop++){
                 printf("check socket %d at index %d",socketArray[tcpSocketLoop],tcpSocketLoop);
-                // if(0){
                 if(FD_ISSET(socketArray[tcpSocketLoop], &rfds)){
                     int 	client_len;
 	                struct sockaddr_in client;
@@ -510,7 +469,10 @@ int main(int argc, char **argv) {
                     int readamnt;
                     char	*bp, buf[BUFLEN];
                 	unsigned char  buffer[100];
-
+                    char downloadRequestBuf[22] = {0};
+                    int downloadRequestLen = read(sd, downloadRequestBuf, 22);
+                    struct pdu downloadRequestPDU = loadPdufromBuf(downloadRequestBuf,22);
+                    printf("client send %s\n",downloadRequestPDU.data);
                     FILE* file;
                     file = fopen(filenames[tcpSocketLoop],"rb");
 
@@ -523,7 +485,7 @@ int main(int argc, char **argv) {
                     }
 
                     // If file found, write contents to client then exit
-                    write(sd, "d", sizeof("d"));
+                    write(sd, "C", sizeof("C"));
                     while(readamnt = fread(buffer,sizeof(*buffer),ARRAY_SIZE(buffer),	file))
                     {
                         write(sd, buffer, readamnt);
@@ -535,7 +497,6 @@ int main(int argc, char **argv) {
                     fclose(file);
                     close(sd);
                     printf("closed file and socket");
-                    // exit(0);
                 }
             }
         }
