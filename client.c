@@ -289,10 +289,10 @@ int main(int argc, char **argv) {
                     write(sd, &requestDownloadPDU, 10 + 10 + 1);
 
                     // Step 6) Download File
-                    char fileReadCharacters[16000];
+                    char fileReadCharacters[160000];
                     int msgByteLength = 0;
                     int i;
-                    while((i = read(sd, &fileReadCharacters[msgByteLength], 16000)) > 0) {
+                    while((i = read(sd, &fileReadCharacters[msgByteLength], 160000)) > 0) {
                         msgByteLength += i;
                     }
                     if(fileReadCharacters[0] != 'C') {
